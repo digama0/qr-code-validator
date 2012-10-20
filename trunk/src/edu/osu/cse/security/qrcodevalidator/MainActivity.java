@@ -2,8 +2,9 @@ package edu.osu.cse.security.qrcodevalidator;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
@@ -20,15 +21,13 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         text = (TextView)findViewById(R.id.text);
+        text.setMovementMethod(LinkMovementMethod.getInstance());
         final Button button = (Button)findViewById(R.id.go);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 IntentIntegrator integrator = new IntentIntegrator(
                     MainActivity.this);
                 integrator.initiateScan();
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri
-                    .parse(text.getText().toString()));
-                startActivity(browserIntent);
             }
         });
     }
@@ -44,7 +43,8 @@ public class MainActivity extends Activity {
         IntentResult scanResult = IntentIntegrator.parseActivityResult(
             requestCode, resultCode, intent);
         if (scanResult != null) {
-            text.setText(scanResult.getContents());
+            text.setText(Html.fromHtml("<a href=\"" + scanResult.getContents()
+                + "\">" + scanResult.getContents() + "</a>"));
         }
     }
 }
