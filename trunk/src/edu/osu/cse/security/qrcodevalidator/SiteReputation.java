@@ -1,12 +1,11 @@
+package edu.osu.cse.security.qrcodevalidator;
+
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class SiteReputation
+public class SiteReputation
 {
 	String basicInfo;
 	int responseCode = 0;
@@ -15,7 +14,7 @@ class SiteReputation
 	final static int MAX_REDIRECTS = 20;
 	//Hooray for CSE webspace!
 	final static String BLACKLIST_URL = "http://www.cse.ohio-state.edu/~powelle/blacklist.txt";
-	
+
 	public SiteReputation(String url_s){
 		/**
 		 * Gets whether a string is a URL, and whether it is valid http
@@ -29,7 +28,7 @@ class SiteReputation
 		catch (MalformedURLException e) {
 			this.basicInfo = "This QR code isn't a website";
 		}
-		
+
 		//Next, get the response code.
 		HttpURLConnection conn = null;
 		try{
@@ -129,7 +128,7 @@ class SiteReputation
 			//site is not rated.
 			return -1;
 		}
-		
+
 		int i = s.indexOf("name=\"0\"");
 		i = s.indexOf("r=\"");
 		i += 3; //i is now the start of the rating
@@ -151,7 +150,7 @@ class SiteReputation
 		}
 		return "Not on blacklist.";
 	}
-	
+
 	private static String StringFromURL(String url) throws IOException{
 		URL urlo = null;
 		try{
@@ -168,14 +167,14 @@ class SiteReputation
 			e.printStackTrace();
 		}
 		java.io.InputStream is = conn.getInputStream();
-		
+
 		StringBuilder data = new StringBuilder("");
 		while (is.available() > 0) {
 			data.append((char)is.read());
 		}
 		return data.toString();
 	}
-	
+
 	public static void main(String[] args) throws IOException
 	{
 		SiteReputation test = new SiteReputation(args[0]);
