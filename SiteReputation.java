@@ -143,13 +143,16 @@ class SiteReputation
 	public static String getBlacklisted(String url) throws IOException{
 		String s = StringFromURL(BLACKLIST_URL);
 		for (String regex : s.split("\n")) {
+		    String[] regexResponse = regex.split("\\s+", 2);
+		    regex = regexResponse[0];
+		    String response = regexResponse[1];
 			Pattern p = Pattern.compile(regex);
 			Matcher m = p.matcher(url);
 			if (m.matches()){
-				return "Blacklisted!";
+				return response;
 			}
 		}
-		return "Not on blacklist.";
+		return "No safety information.";
 	}
 	
 	private static String StringFromURL(String url) throws IOException{
