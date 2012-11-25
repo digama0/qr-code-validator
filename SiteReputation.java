@@ -92,16 +92,20 @@ class SiteReputation
 				conn = (HttpURLConnection) url.openConnection();
 			}
 			catch (MalformedURLException e) {
-				this.basicInfo = "Broken redirect.";
+				this.basicInfo =  "Broken redirect.";
 				break;
 			} catch (IOException e) {
-				this.basicInfo = "Broken redirect.";
+				this.basicInfo =  "Broken redirect.";
 				break;
 			}
 			//And now see what it does
 			try {
 				this.responseCode = conn.getResponseCode();
 			} catch (IOException e) {
+			    //This exception is thrown for go.osu.edu/lan and I'm not sure
+			    //why. Some failed cert check, by the below.
+			    //TODO
+				//System.out.println(e.getMessage());
 				this.basicInfo =  "Broken redirect.";
 			}
 			//If it's good, we're done here.
@@ -185,7 +189,7 @@ class SiteReputation
 		System.out.println(test.responseCode);
 	    System.out.println(test.basicInfo);
 	    System.out.println(test.redirectURL);
-	    System.out.println(getWOT(args[0]));
-	    System.out.println(getBlacklisted(args[0]));
+	    System.out.println(getWOT(test.redirectURL));
+	    System.out.println(getBlacklisted(test.redirectURL));
 	}
 }
