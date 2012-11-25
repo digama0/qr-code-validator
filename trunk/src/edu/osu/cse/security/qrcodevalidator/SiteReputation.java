@@ -91,16 +91,20 @@ public class SiteReputation
 				conn = (HttpURLConnection) url.openConnection();
 			}
 			catch (MalformedURLException e) {
-				this.basicInfo = "Broken redirect.";
+				this.basicInfo =  "Broken redirect.";
 				break;
 			} catch (IOException e) {
-				this.basicInfo = "Broken redirect.";
+				this.basicInfo =  "Broken redirect.";
 				break;
 			}
 			//And now see what it does
 			try {
 				this.responseCode = conn.getResponseCode();
 			} catch (IOException e) {
+			    //This exception is thrown for go.osu.edu/lan and I'm not sure
+			    //why. Some failed cert check, by the below.
+			    //TODO
+				//System.out.println(e.getMessage());
 				this.basicInfo =  "Broken redirect.";
 			}
 			//If it's good, we're done here.
@@ -142,13 +146,16 @@ public class SiteReputation
 	public static String getBlacklisted(String url) throws IOException{
 		String s = StringFromURL(BLACKLIST_URL);
 		for (String regex : s.split("\n")) {
+		    String[] regexResponse = regex.split("\\s+", 2);
+		    regex = regexResponse[0];
+		    String response = regexResponse[1];
 			Pattern p = Pattern.compile(regex);
 			Matcher m = p.matcher(url);
 			if (m.matches()){
-				return "Blacklisted!";
+				return response;
 			}
 		}
-		return "Not on blacklist.";
+		return "No safety information.";
 	}
 
 	private static String StringFromURL(String url) throws IOException{
@@ -181,7 +188,7 @@ public class SiteReputation
 		System.out.println(test.responseCode);
 	    System.out.println(test.basicInfo);
 	    System.out.println(test.redirectURL);
-	    System.out.println(getWOT(args[0]));
-	    System.out.println(getBlacklisted(args[0]));
+	    System.out.println(getWOT(test.redirectURL));
+	    System.out.println(getBlacklisted(test.redirectURL));
 	}
 }
