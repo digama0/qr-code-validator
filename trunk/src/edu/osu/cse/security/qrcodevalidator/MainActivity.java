@@ -17,15 +17,16 @@ public class MainActivity extends Activity {
     public TextView text;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         text = (TextView)findViewById(R.id.text);
         text.setMovementMethod(LinkMovementMethod.getInstance());
         final Button button = (Button)findViewById(R.id.go);
         button.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                IntentIntegrator integrator = new IntentIntegrator(
+            @Override
+            public void onClick(final View v) {
+                final IntentIntegrator integrator = new IntentIntegrator(
                     MainActivity.this);
                 integrator.initiateScan();
             }
@@ -33,14 +34,16 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.activity_main, menu);
         return true;
     }
 
-    public void onActivityResult(int requestCode, int resultCode, Intent intent)
+    @Override
+    public void onActivityResult(final int requestCode, final int resultCode,
+        final Intent intent)
     {
-        IntentResult scanResult = IntentIntegrator.parseActivityResult(
+        final IntentResult scanResult = IntentIntegrator.parseActivityResult(
             requestCode, resultCode, intent);
         if (scanResult != null) {
             text.setText(Html.fromHtml("<a href=\"" + scanResult.getContents()
