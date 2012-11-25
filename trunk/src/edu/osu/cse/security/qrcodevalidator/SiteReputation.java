@@ -31,6 +31,7 @@ public class SiteReputation {
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection)url.openConnection();
+            conn.setInstanceFollowRedirects(false);
         } catch (final IOException e) {
             basicInfo = "Unable to verify link.";
         }
@@ -79,6 +80,7 @@ public class SiteReputation {
             try {
                 final URL url = new URL(redirectURL);
                 conn = (HttpURLConnection)url.openConnection();
+                conn.setInstanceFollowRedirects(false);
             } catch (final MalformedURLException e) {
                 basicInfo = "Broken redirect.";
                 break;
