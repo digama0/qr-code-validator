@@ -57,9 +57,11 @@ public class SiteReputation {
         }
         else if (responseCode == 200) {
             basicInfo = ErrorCode.SUCCESS;
+            getRedirect(conn);
         }
         else if (responseCode > 200 && responseCode < 300) {
             basicInfo = ErrorCode.WTF;
+            getRedirect(conn);
         }
         else if (responseCode == 305 || responseCode == 306) {
             basicInfo = ErrorCode.PROXY;
@@ -70,16 +72,13 @@ public class SiteReputation {
         }
     }
     private void getRedirect(HttpURLConnection conn) {
-        redirectURL = "";
         final int i = 0;
         // keep checking redirects until we get tired of it.
         while (i < MAX_REDIRECTS) {
             final String redirect = conn.getHeaderField("Location");
             if (redirect != null) {
+                basicInfo = ErrorCode.REDIRECT;
                 redirectURL = redirect;
-            }
-            else {
-                break;
             }
             // Make an object of it
             try {
@@ -105,7 +104,26 @@ public class SiteReputation {
             }
             // If it's good, we're done here.
             if (responseCode >= 200 && responseCode < 300) {
-                break;
+                try {
+                    // Look for http-equiv="refresh" redirects.
+                    String data = stringFromConn(conn);
+                    String p = "<meta\\s+http-equiv=\"refresh\"\\s+content=\"\\d+;URL=([^\"]*)\"";
+                    // Special-case v.gd, which uses a weird redirect mechanism.
+                    if (redirectURL.matches("https?://v.gd/.*"))
+                        p = "<a href=\"([^\"]*)\" class=\"biglink\">";
+                    Matcher m = Pattern.compile(p).matcher(data);
+                    if (m.find()) {
+                        basicInfo = ErrorCode.REDIRECT;
+                        redirectURL = m.group(1);
+                    }
+                    else {
+                        // No more redirects
+                        break;
+                    }
+                } catch (IOException e) {
+                    basicInfo = ErrorCode.BROKEN_REDIRECT;
+                    break;
+                }
             }
             // If it's bad, say so, then we're done.
             else if (!(responseCode >= 300 && responseCode < 400)) {
@@ -121,7 +139,7 @@ public class SiteReputation {
                 + redirectURL;
             String s;
             try {
-                s = StringFromURL(url);
+                s = stringFromUrl(url);
             } catch (final IOException e) {
                 return wot = -1; // Can't get a rating, so call it unrated.
             }
@@ -144,7 +162,7 @@ public class SiteReputation {
     public String getBlacklisted() {
         if (blacklisted == null) {
             try {
-                final String s = StringFromURL(BLACKLIST_URL);
+                final String s = stringFromUrl(BLACKLIST_URL);
                 for (String regex : s.split("\n")) {
                     final String[] regexResponse = regex.split("\\s+", 2);
                     regex = regexResponse[0];
@@ -156,13 +174,14 @@ public class SiteReputation {
                 }
                 blacklisted = "No safety information.";
             } catch (IOException e) {
-                blacklisted = "Unable to reach blacklist site: "+e.getMessage();
+                blacklisted = "Unable to reach blacklist site: "
+                    + e.getMessage();
             }
         }
         return blacklisted;
     }
 
-    private static String StringFromURL(final String url) throws IOException {
+    private static String stringFromUrl(final String url) throws IOException {
         URL urlo = null;
         try {
             urlo = new URL(url);
@@ -175,13 +194,16 @@ public class SiteReputation {
         } catch (final IOException e) {
             e.printStackTrace();
         }
+        return stringFromConn(conn);
+    }
+
+    private static String stringFromConn(final URLConnection conn)
+        throws IOException
+    {
         final java.io.InputStream is = conn.getInputStream();
 
-        final StringBuilder data = new StringBuilder("");
-        while (is.available() > 0) {
-            data.append((char)is.read());
-        }
-        return data.toString();
+        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
     }
 
     public static void main(final String[] args) throws IOException {
@@ -201,18 +223,19 @@ public class SiteReputation {
     }
 
     public enum ErrorCode {
-        NOT_SITE("This QR code isn't a website"),
-        CANT_VERIFY("Unable to verify link."),
-        NOT_FOUND("Link doesn't work, page not found."),
-        BROKEN("Link doesn't work."),
-        SERVER_DOWN("Servers down, link doesn't work."),
-        SUCCESS("Link works."),
-        WTF("Link probably works, but is a bit odd."),
-        PROXY("Proxy requested; possibly insecure."),
-        REDIRECT("Link is a redirect."),
-        BROKEN_REDIRECT("Broken redirect.");
+        NOT_SITE("This QR code isn't a website"), CANT_VERIFY(
+            "Unable to verify link."), NOT_FOUND(
+            "Link doesn't work, page not found."),
+        BROKEN("Link doesn't work."), SERVER_DOWN(
+            "Servers down, link doesn't work."), SUCCESS("Link works."), WTF(
+            "Link probably works, but is a bit odd."), PROXY(
+            "Proxy requested; possibly insecure."), REDIRECT(
+            "Link is a redirect."), BROKEN_REDIRECT("Broken redirect.");
 
         public String verbose;
-        private ErrorCode(String n) {verbose = n;}
+
+        private ErrorCode(String n) {
+            verbose = n;
+        }
     }
 }
