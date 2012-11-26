@@ -1,5 +1,7 @@
 package edu.osu.cse.security.qrcodevalidator;
 
+import java.io.IOException;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -46,8 +48,16 @@ public class MainActivity extends Activity {
         final IntentResult scanResult = IntentIntegrator.parseActivityResult(
             requestCode, resultCode, intent);
         if (scanResult != null) {
+            SiteReputation sr = new SiteReputation(scanResult.getContents());
+            String black = "";
+            try {
+                black = "<br/>" + SiteReputation.getBlacklisted(sr.redirectURL);
+            } catch (IOException e) {}
             text.setText(Html.fromHtml("<a href=\"" + scanResult.getContents()
-                + "\">" + scanResult.getContents() + "</a>"));
+                + "\">" + scanResult.getContents() + "</a><br/>" + sr.basicInfo
+                + "<br/>" + "Redirects to: <a href=\"" + sr.redirectURL + "\">"
+                + sr.redirectURL + "</a><br/>" + "WOT Rating: "
+                + SiteReputation.getWOT(sr.redirectURL) + "<br/>" + black));
         }
     }
 }

@@ -1,6 +1,6 @@
 package edu.osu.cse.security.qrcodevalidator;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -120,7 +120,7 @@ public class SiteReputation {
         }
         // This is a terrible, quick & dirty way of parsing the xml.
         if (s.indexOf("name=\"0\"") < 0) // site is not rated.
-        return -1;
+            return -1;
 
         int i = s.indexOf("name=\"0\"");
         i = s.indexOf("r=\"");
@@ -140,7 +140,8 @@ public class SiteReputation {
             final String response = regexResponse[1];
             final Pattern p = Pattern.compile(regex);
             final Matcher m = p.matcher(url);
-            if (m.matches()) return response;
+            if (m.matches())
+                return response;
         }
         return "No safety information.";
     }
@@ -168,7 +169,13 @@ public class SiteReputation {
     }
 
     public static void main(final String[] args) throws IOException {
-        final SiteReputation test = new SiteReputation(args[0]);
+        String s;
+        if (args.length == 0) {
+            System.out.print("Enter a URL: ");
+            s = new BufferedReader(new InputStreamReader(System.in)).readLine();
+        }
+        else s = args[0];
+        final SiteReputation test = new SiteReputation(s);
         System.out.println(test.responseCode);
         System.out.println(test.basicInfo);
         System.out.println(test.redirectURL);
