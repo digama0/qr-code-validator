@@ -2,6 +2,7 @@ package edu.osu.cse.security.qrcodevalidator;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Html;
@@ -12,10 +13,14 @@ import android.widget.*;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import edu.osu.cse.security.qrcodevalidator.SiteReputation.ErrorCode;
+
 public class MainActivity extends Activity {
     public TextView text;
     public ImageView wot;
+    public Button go;
     public int wotRating = -2;
+    public String goUrl = null;
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
@@ -24,8 +29,8 @@ public class MainActivity extends Activity {
         text = (TextView)findViewById(R.id.text);
         wot = (ImageView)findViewById(R.id.wot);
         text.setMovementMethod(LinkMovementMethod.getInstance());
-        final Button button = (Button)findViewById(R.id.go);
-        button.setOnClickListener(new View.OnClickListener() {
+        final Button scan = (Button)findViewById(R.id.scan);
+        scan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View v) {
                 final IntentIntegrator integrator = new IntentIntegrator(
@@ -33,11 +38,21 @@ public class MainActivity extends Activity {
                 integrator.initiateScan();
             }
         });
+        go = (Button)findViewById(R.id.go);
+        go.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(final View v) {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(goUrl)));
+            }
+        });
 
         if (savedInstanceState != null) {
             text.setText(savedInstanceState.getString("scanResults"));
             wot.setImageResource(wotResource(wotRating = savedInstanceState
                 .getInt("wotRating")));
+            goUrl = savedInstanceState.getString("goUrl");
+            if (goUrl != null)
+                go.setVisibility(View.VISIBLE);
         }
     }
 
@@ -46,6 +61,7 @@ public class MainActivity extends Activity {
         super.onSaveInstanceState(outState);
         outState.putString("scanResults", text.getText().toString());
         outState.putInt("wotRating", wotRating);
+        outState.putString("goUrl", goUrl);
     }
 
     @Override
@@ -57,6 +73,8 @@ public class MainActivity extends Activity {
         if (scanResult != null) {
             text.setText(Html.fromHtml(scanResult.getContents()
                 + "<br/>Checking security..."));
+            wot.setImageDrawable(null);
+            go.setVisibility(View.GONE);
             new RedirectExplorerTask().execute(scanResult.getContents());
         }
     }
@@ -77,31 +95,35 @@ public class MainActivity extends Activity {
             String origLink = "<a href=\"" + sr.originalURL + "\">"
                 + sr.originalURL + "</a><br/>";
             String resultInfo = sr.basicInfo.verbose + "<br/>";
-            String redirectInfo = "Redirects to: <a href=\"" + sr.redirectURL
-                + "\">" + sr.redirectURL + "</a><br/>";
+            goUrl = sr.redirectURL;
+            String redirectInfo = "Redirects to: <a href=\"" + goUrl
+                + "\">" + goUrl + "</a><br/>";
             String trustInfo = "WOT Rating: " + sr.getWot() + "<br/>"
                 + sr.getBlacklisted();
 
-            switch (sr.basicInfo) {
-                case NOT_SITE:
-                    text.setText(sr.originalURL);
-                    wot.setImageDrawable(null);
-                    wotRating = -2;
-                    break;
-                case SUCCESS:
-                    text.setText(Html.fromHtml(origLink + trustInfo));
-                    wot.setImageResource(wotResource(wotRating = sr.getWot()));
-                    break;
-                case REDIRECT:
-                case BROKEN_REDIRECT:
-                    text.setText(Html.fromHtml(origLink + resultInfo
-                        + redirectInfo + trustInfo));
-                    wot.setImageResource(wotResource(wotRating = sr.getWot()));
-                    break;
-                default:
-                    text.setText(Html.fromHtml(origLink + resultInfo
-                        + trustInfo));
-                    wot.setImageResource(wotResource(wotRating = sr.getWot()));
+            if (sr.basicInfo == ErrorCode.NOT_SITE) {
+                text.setText(sr.originalURL);
+                wot.setImageDrawable(null);
+                wotRating = -2;
+                goUrl = null;
+                go.setVisibility(View.GONE);
+            }
+            else {
+                switch (sr.basicInfo) {
+                    case SUCCESS:
+                        text.setText(Html.fromHtml(origLink + trustInfo));
+                        break;
+                    case REDIRECT:
+                    case BROKEN_REDIRECT:
+                        text.setText(Html.fromHtml(origLink + resultInfo
+                            + redirectInfo + trustInfo));
+                        break;
+                    default:
+                        text.setText(Html.fromHtml(origLink + resultInfo
+                            + trustInfo));
+                }
+                wot.setImageResource(wotResource(wotRating = sr.getWot()));
+                go.setVisibility(View.VISIBLE);
             }
         }
     }

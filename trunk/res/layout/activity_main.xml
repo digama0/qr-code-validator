@@ -4,27 +4,63 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
-     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <View
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight=".5" />
+
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-    
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal" >
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight=".5" />
+
         <Button
-            android:id="@+id/go"
+            android:id="@+id/scan"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/go" />
-        <ImageView
-            android:id="@+id/wot"
+            android:text="@string/scan"
+            android:textSize="@dimen/large" />
+
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:contentDescription="@string/wot" />
-        
+            android:layout_gravity="center_vertical"
+            android:layout_weight=".5" >
+
+            <ImageView
+                android:id="@+id/wot"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/wot" />
+        </LinearLayout>
     </LinearLayout>
+
     <TextView
         android:id="@+id/text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:clickable="true" />
-    
+        android:layout_gravity="center"
+        android:clickable="true"
+        android:gravity="center" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight=".5" />
+
+    <Button
+        android:id="@+id/go"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/go"
+        
+        android:visibility="gone" />
+
 </LinearLayout>
