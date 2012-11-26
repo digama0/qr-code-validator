@@ -3,8 +3,8 @@
     <string name="title">QR Buffer</string>
     <string name="app_name">QRCodeValidator</string>
     <string name="go">Scan</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="wot">WOT Rating</string>
     <string name="menu_settings">Settings</string>
-    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_main">QR Buffer</string>
 
 </resources>

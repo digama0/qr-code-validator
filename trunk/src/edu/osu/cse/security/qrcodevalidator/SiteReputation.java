@@ -9,7 +9,7 @@ public class SiteReputation {
     public ErrorCode basicInfo;
     public int responseCode = 0;
     public String originalURL, redirectURL;
-    private int WOT = -2;
+    private int wot = -2;
     private String blacklisted = null;
     // This is the standard, as I recall.
     final static int MAX_REDIRECTS = 20;
@@ -115,19 +115,19 @@ public class SiteReputation {
             // Otherwise, we're at it again.
         }
     }
-    public int getWOT() {
-        if (WOT == -2) {
+    public int getWot() {
+        if (wot == -2) {
             String url = "http://api.mywot.com/0.4/public_query2?url="
                 + redirectURL;
             String s;
             try {
                 s = StringFromURL(url);
             } catch (final IOException e) {
-                return WOT = -1; // Can't get a rating, so call it unrated.
+                return wot = -1; // Can't get a rating, so call it unrated.
             }
             // This is a terrible, quick & dirty way of parsing the xml.
             if (s.indexOf("name=\"0\"") < 0) // site is not rated.
-                return WOT = -1;
+                return wot = -1;
 
             int i = s.indexOf("name=\"0\"");
             i = s.indexOf("r=\"");
@@ -137,9 +137,9 @@ public class SiteReputation {
                 rate += s.charAt(i);
                 i++;
             }
-            WOT = Integer.parseInt(rate);
+            wot = Integer.parseInt(rate);
         }
-        return WOT;
+        return wot;
     }
     public String getBlacklisted() {
         if (blacklisted == null) {
@@ -196,7 +196,7 @@ public class SiteReputation {
         System.out.println(test.responseCode);
         System.out.println(test.basicInfo.verbose);
         System.out.println(test.redirectURL);
-        System.out.println(test.getWOT());
+        System.out.println(test.getWot());
         System.out.println(test.getBlacklisted());
     }
 
