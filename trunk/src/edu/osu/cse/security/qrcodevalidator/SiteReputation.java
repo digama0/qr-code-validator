@@ -6,9 +6,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SiteReputation {
-    String basicInfo;
-    int responseCode = 0;
-    String redirectURL;
+    public String basicInfo;
+    public int responseCode = 0;
+    public String originalURL, redirectURL;
+    private int WOT = -2;
+    private String blacklisted = null;
     // This is the standard, as I recall.
     final static int MAX_REDIRECTS = 20;
     // Hooray for CSE webspace!
@@ -19,7 +21,8 @@ public class SiteReputation {
          * Gets whether a string is a URL, and whether it is valid http
          */
         // First, check syntax.
-        redirectURL = url_s;// this will be changed if it redirects.
+        redirectURL = originalURL = url_s;// this will be changed if it
+                                          // redirects.
         URL url = null;
         try {
             url = new URL(url_s);
@@ -110,40 +113,51 @@ public class SiteReputation {
             // Otherwise, we're at it again.
         }
     }
-    public static int getWOT(String url) {
-        url = "http://api.mywot.com/0.4/public_query2?url=" + url;
-        String s;
-        try {
-            s = StringFromURL(url);
-        } catch (final IOException e) {
-            return -1; // Can't get a rating, so call it unrated.
-        }
-        // This is a terrible, quick & dirty way of parsing the xml.
-        if (s.indexOf("name=\"0\"") < 0) // site is not rated.
-            return -1;
+    public int getWOT() {
+        if (WOT == -2) {
+            String url = "http://api.mywot.com/0.4/public_query2?url="
+                + redirectURL;
+            String s;
+            try {
+                s = StringFromURL(url);
+            } catch (final IOException e) {
+                return WOT = -1; // Can't get a rating, so call it unrated.
+            }
+            // This is a terrible, quick & dirty way of parsing the xml.
+            if (s.indexOf("name=\"0\"") < 0) // site is not rated.
+                return WOT = -1;
 
-        int i = s.indexOf("name=\"0\"");
-        i = s.indexOf("r=\"");
-        i += 3; // i is now the start of the rating
-        String rate = "";
-        while (s.charAt(i) != '"') {
-            rate += s.charAt(i);
-            i++;
+            int i = s.indexOf("name=\"0\"");
+            i = s.indexOf("r=\"");
+            i += 3; // i is now the start of the rating
+            String rate = "";
+            while (s.charAt(i) != '"') {
+                rate += s.charAt(i);
+                i++;
+            }
+            WOT = Integer.parseInt(rate);
         }
-        return Integer.parseInt(rate);
+        return WOT;
     }
-    public static String getBlacklisted(final String url) throws IOException {
-        final String s = StringFromURL(BLACKLIST_URL);
-        for (String regex : s.split("\n")) {
-            final String[] regexResponse = regex.split("\\s+", 2);
-            regex = regexResponse[0];
-            final String response = regexResponse[1];
-            final Pattern p = Pattern.compile(regex);
-            final Matcher m = p.matcher(url);
-            if (m.matches())
-                return response;
+    public String getBlacklisted() {
+        if (blacklisted == null) {
+            try {
+                final String s = StringFromURL(BLACKLIST_URL);
+                for (String regex : s.split("\n")) {
+                    final String[] regexResponse = regex.split("\\s+", 2);
+                    regex = regexResponse[0];
+                    final String response = regexResponse[1];
+                    final Pattern p = Pattern.compile(regex);
+                    final Matcher m = p.matcher(redirectURL);
+                    if (m.matches())
+                        return blacklisted = response;
+                }
+                blacklisted = "No safety information.";
+            } catch (IOException e) {
+                blacklisted = "Unable to reach blacklist site.";
+            }
         }
-        return "No safety information.";
+        return blacklisted;
     }
 
     private static String StringFromURL(final String url) throws IOException {
@@ -174,12 +188,13 @@ public class SiteReputation {
             System.out.print("Enter a URL: ");
             s = new BufferedReader(new InputStreamReader(System.in)).readLine();
         }
-        else s = args[0];
+        else
+            s = args[0];
         final SiteReputation test = new SiteReputation(s);
         System.out.println(test.responseCode);
         System.out.println(test.basicInfo);
         System.out.println(test.redirectURL);
-        System.out.println(getWOT(test.redirectURL));
-        System.out.println(getBlacklisted(test.redirectURL));
+        System.out.println(test.getWOT());
+        System.out.println(test.getBlacklisted());
     }
 }

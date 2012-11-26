@@ -1,9 +1,8 @@
 package edu.osu.cse.security.qrcodevalidator;
 
-import java.io.IOException;
-
 import android.app.Activity;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
@@ -48,16 +47,25 @@ public class MainActivity extends Activity {
         final IntentResult scanResult = IntentIntegrator.parseActivityResult(
             requestCode, resultCode, intent);
         if (scanResult != null) {
-            SiteReputation sr = new SiteReputation(scanResult.getContents());
-            String black = "";
-            try {
-                black = "<br/>" + SiteReputation.getBlacklisted(sr.redirectURL);
-            } catch (IOException e) {}
-            text.setText(Html.fromHtml("<a href=\"" + scanResult.getContents()
-                + "\">" + scanResult.getContents() + "</a><br/>" + sr.basicInfo
+            new RedirectExplorerTask().execute(scanResult.getContents());
+        }
+    }
+    private class RedirectExplorerTask extends AsyncTask<String, Void, SiteReputation> {
+        protected SiteReputation doInBackground(String... url) {
+            SiteReputation sr = new SiteReputation(url[0]);
+            sr.getWOT();
+            sr.getBlacklisted();
+            return sr;
+        }
+
+        protected void onProgressUpdate(Void... nothing) {}
+
+        protected void onPostExecute(SiteReputation sr) {
+            text.setText(Html.fromHtml("<a href=\"" + sr.originalURL
+                + "\">" + sr.originalURL + "</a><br/>" + sr.basicInfo
                 + "<br/>" + "Redirects to: <a href=\"" + sr.redirectURL + "\">"
                 + sr.redirectURL + "</a><br/>" + "WOT Rating: "
-                + SiteReputation.getWOT(sr.redirectURL) + "<br/>" + black));
+                + sr.getWOT() + "<br/>" + sr.getBlacklisted()));
         }
     }
 }
