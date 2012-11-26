@@ -5,6 +5,8 @@ import java.net.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.net.ssl.SSLHandshakeException;
+
 public class SiteReputation {
     public ErrorCode basicInfo;
     public int responseCode = 0;
@@ -95,12 +97,12 @@ public class SiteReputation {
             // And now see what it does
             try {
                 responseCode = conn.getResponseCode();
+            } catch (final SSLHandshakeException e) {
+                basicInfo = ErrorCode.BROKEN_CERTS;
+                break;
             } catch (final IOException e) {
-                // This exception is thrown for go.osu.edu/lan and I'm not sure
-                // why. Some failed cert check, by the below.
-                // TODO
-                // System.out.println(e.getMessage());
                 basicInfo = ErrorCode.BROKEN_REDIRECT;
+                break;
             }
             // If it's good, we're done here.
             if (responseCode >= 200 && responseCode < 300) {
@@ -109,7 +111,7 @@ public class SiteReputation {
                     String data = stringFromConn(conn);
                     String p = "<meta\\s+http-equiv=\"refresh\"\\s+content=\"\\d+;URL=([^\"]*)\"";
                     // Special-case v.gd, which uses a weird redirect mechanism.
-                    if (redirectURL.matches("https?://v.gd/.*"))
+                    if (redirectURL.matches("https?://v\\.gd/.+"))
                         p = "<a href=\"([^\"]*)\" class=\"biglink\">";
                     Matcher m = Pattern.compile(p).matcher(data);
                     if (m.find()) {
@@ -135,6 +137,7 @@ public class SiteReputation {
     }
     public int getWot() {
         if (wot == -2) {
+            if (basicInfo == ErrorCode.NOT_SITE) return wot = -1;
             String url = "http://api.mywot.com/0.4/public_query2?url="
                 + redirectURL;
             String s;
@@ -162,6 +165,7 @@ public class SiteReputation {
     public String getBlacklisted() {
         if (blacklisted == null) {
             try {
+                if (basicInfo == ErrorCode.NOT_SITE) return blacklisted = "";
                 final String s = stringFromUrl(BLACKLIST_URL);
                 for (String regex : s.split("\n")) {
                     final String[] regexResponse = regex.split("\\s+", 2);
@@ -223,14 +227,17 @@ public class SiteReputation {
     }
 
     public enum ErrorCode {
-        NOT_SITE("This QR code isn't a website"), CANT_VERIFY(
-            "Unable to verify link."), NOT_FOUND(
-            "Link doesn't work, page not found."),
-        BROKEN("Link doesn't work."), SERVER_DOWN(
-            "Servers down, link doesn't work."), SUCCESS("Link works."), WTF(
-            "Link probably works, but is a bit odd."), PROXY(
-            "Proxy requested; possibly insecure."), REDIRECT(
-            "Link is a redirect."), BROKEN_REDIRECT("Broken redirect.");
+        NOT_SITE("This QR code isn't a website"),
+        CANT_VERIFY("Unable to verify link."),
+        NOT_FOUND("Link doesn't work, page not found."),
+        BROKEN("Link doesn't work."),
+        SERVER_DOWN("Servers down, link doesn't work."),
+        SUCCESS("Link works."),
+        WTF("Link probably works, but is a bit odd."),
+        PROXY("Proxy requested; possibly insecure."),
+        REDIRECT("Link is a redirect."),
+        BROKEN_REDIRECT("Broken redirect."),
+        BROKEN_CERTS("Unable to verify certificate (possible security threat).");
 
         public String verbose;
 

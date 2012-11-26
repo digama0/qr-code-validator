@@ -115,6 +115,7 @@ public class MainActivity extends Activity {
                         break;
                     case REDIRECT:
                     case BROKEN_REDIRECT:
+                    case BROKEN_CERTS:
                         text.setText(Html.fromHtml(origLink + resultInfo
                             + redirectInfo + trustInfo));
                         break;
