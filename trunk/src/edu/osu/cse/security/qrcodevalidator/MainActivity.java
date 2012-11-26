@@ -47,10 +47,14 @@ public class MainActivity extends Activity {
         final IntentResult scanResult = IntentIntegrator.parseActivityResult(
             requestCode, resultCode, intent);
         if (scanResult != null) {
+            text.setText(Html.fromHtml(scanResult.getContents() + "<br/>Checking security..."));
             new RedirectExplorerTask().execute(scanResult.getContents());
         }
     }
-    private class RedirectExplorerTask extends AsyncTask<String, Void, SiteReputation> {
+
+    private class RedirectExplorerTask extends
+        AsyncTask<String, Void, SiteReputation>
+    {
         protected SiteReputation doInBackground(String... url) {
             SiteReputation sr = new SiteReputation(url[0]);
             sr.getWOT();
@@ -61,11 +65,28 @@ public class MainActivity extends Activity {
         protected void onProgressUpdate(Void... nothing) {}
 
         protected void onPostExecute(SiteReputation sr) {
-            text.setText(Html.fromHtml("<a href=\"" + sr.originalURL
-                + "\">" + sr.originalURL + "</a><br/>" + sr.basicInfo
-                + "<br/>" + "Redirects to: <a href=\"" + sr.redirectURL + "\">"
-                + sr.redirectURL + "</a><br/>" + "WOT Rating: "
-                + sr.getWOT() + "<br/>" + sr.getBlacklisted()));
+            String origLink = "<a href=\"" + sr.originalURL + "\">"
+                + sr.originalURL + "</a><br/>";
+            String resultInfo = sr.basicInfo.verbose + "<br/>";
+            String redirectInfo = "Redirects to: <a href=\"" + sr.redirectURL
+                + "\">" + sr.redirectURL + "</a><br/>";
+            String trustInfo = "WOT Rating: " + sr.getWOT() + "<br/>"
+                + sr.getBlacklisted();
+            switch (sr.basicInfo) {
+                case NOT_SITE:
+                    text.setText(sr.originalURL);
+                    break;
+                case SUCCESS:
+                    text.setText(Html.fromHtml(origLink + trustInfo));
+                    break;
+                case REDIRECT:
+                case BROKEN_REDIRECT:
+                    text.setText(Html.fromHtml(origLink + resultInfo + redirectInfo
+                        + trustInfo));
+                    break;
+                default:
+                    text.setText(Html.fromHtml(origLink + resultInfo + trustInfo));
+            }
         }
     }
 }

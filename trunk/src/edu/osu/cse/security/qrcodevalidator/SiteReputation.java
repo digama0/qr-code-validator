@@ -6,7 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SiteReputation {
-    public String basicInfo;
+    public ErrorCode basicInfo;
     public int responseCode = 0;
     public String originalURL, redirectURL;
     private int WOT = -2;
@@ -27,7 +27,8 @@ public class SiteReputation {
         try {
             url = new URL(url_s);
         } catch (final MalformedURLException e) {
-            basicInfo = "This QR code isn't a website";
+            basicInfo = ErrorCode.NOT_SITE;
+            return;
         }
 
         // Next, get the response code.
@@ -36,34 +37,35 @@ public class SiteReputation {
             conn = (HttpURLConnection)url.openConnection();
             conn.setInstanceFollowRedirects(false);
         } catch (final IOException e) {
-            basicInfo = "Unable to verify link.";
+            basicInfo = ErrorCode.CANT_VERIFY;
+            return;
         }
         try {
             responseCode = conn.getResponseCode();
         } catch (final IOException e) {
-            basicInfo = "Unable to verify link.";
+            basicInfo = ErrorCode.CANT_VERIFY;
         }
         // Now, with the response code, tell us about the link.
         if (responseCode == 404) {
-            basicInfo = "Link doesn't work, page not found.";
+            basicInfo = ErrorCode.NOT_FOUND;
         }
         else if (responseCode >= 400 && responseCode < 500) {
-            basicInfo = "Link doesn't work.";
+            basicInfo = ErrorCode.BROKEN;
         }
         else if (responseCode >= 500) {
-            basicInfo = "Servers down, link doesn't work.";
+            basicInfo = ErrorCode.SERVER_DOWN;
         }
         else if (responseCode == 200) {
-            basicInfo = "Link works.";
+            basicInfo = ErrorCode.SUCCESS;
         }
         else if (responseCode > 200 && responseCode < 300) {
-            basicInfo = "Link probably works, but is a bit odd.";
+            basicInfo = ErrorCode.WTF;
         }
         else if (responseCode == 305 || responseCode == 306) {
-            basicInfo = "Proxy requested; possibly insecure.";
+            basicInfo = ErrorCode.PROXY;
         }
         else if (responseCode >= 300 && responseCode < 400) {
-            basicInfo = "Link is a redirect.";
+            basicInfo = ErrorCode.REDIRECT;
             getRedirect(conn);
         }
     }
@@ -85,10 +87,10 @@ public class SiteReputation {
                 conn = (HttpURLConnection)url.openConnection();
                 conn.setInstanceFollowRedirects(false);
             } catch (final MalformedURLException e) {
-                basicInfo = "Broken redirect.";
+                basicInfo = ErrorCode.BROKEN_REDIRECT;
                 break;
             } catch (final IOException e) {
-                basicInfo = "Broken redirect.";
+                basicInfo = ErrorCode.BROKEN_REDIRECT;
                 break;
             }
             // And now see what it does
@@ -99,7 +101,7 @@ public class SiteReputation {
                 // why. Some failed cert check, by the below.
                 // TODO
                 // System.out.println(e.getMessage());
-                basicInfo = "Broken redirect.";
+                basicInfo = ErrorCode.BROKEN_REDIRECT;
             }
             // If it's good, we're done here.
             if (responseCode >= 200 && responseCode < 300) {
@@ -107,7 +109,7 @@ public class SiteReputation {
             }
             // If it's bad, say so, then we're done.
             else if (!(responseCode >= 300 && responseCode < 400)) {
-                basicInfo = "Broken redirect.";
+                basicInfo = ErrorCode.BROKEN_REDIRECT;
                 break;
             }
             // Otherwise, we're at it again.
@@ -154,7 +156,7 @@ public class SiteReputation {
                 }
                 blacklisted = "No safety information.";
             } catch (IOException e) {
-                blacklisted = "Unable to reach blacklist site.";
+                blacklisted = "Unable to reach blacklist site: "+e.getMessage();
             }
         }
         return blacklisted;
@@ -192,9 +194,25 @@ public class SiteReputation {
             s = args[0];
         final SiteReputation test = new SiteReputation(s);
         System.out.println(test.responseCode);
-        System.out.println(test.basicInfo);
+        System.out.println(test.basicInfo.verbose);
         System.out.println(test.redirectURL);
         System.out.println(test.getWOT());
         System.out.println(test.getBlacklisted());
+    }
+
+    public enum ErrorCode {
+        NOT_SITE("This QR code isn't a website"),
+        CANT_VERIFY("Unable to verify link."),
+        NOT_FOUND("Link doesn't work, page not found."),
+        BROKEN("Link doesn't work."),
+        SERVER_DOWN("Servers down, link doesn't work."),
+        SUCCESS("Link works."),
+        WTF("Link probably works, but is a bit odd."),
+        PROXY("Proxy requested; possibly insecure."),
+        REDIRECT("Link is a redirect."),
+        BROKEN_REDIRECT("Broken redirect.");
+
+        public String verbose;
+        private ErrorCode(String n) {verbose = n;}
     }
 }
