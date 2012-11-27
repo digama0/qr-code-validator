@@ -5,7 +5,7 @@ import java.net.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLException;
 
 public class SiteReputation {
     public ErrorCode basicInfo;
@@ -97,7 +97,7 @@ public class SiteReputation {
             // And now see what it does
             try {
                 responseCode = conn.getResponseCode();
-            } catch (final SSLHandshakeException e) {
+            } catch (final SSLException e) {
                 basicInfo = ErrorCode.BROKEN_CERTS;
                 break;
             } catch (final IOException e) {
