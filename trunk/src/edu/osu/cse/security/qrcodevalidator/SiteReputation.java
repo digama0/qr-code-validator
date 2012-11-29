@@ -38,12 +38,16 @@ public class SiteReputation {
         try {
             conn = (HttpURLConnection)url.openConnection();
             conn.setInstanceFollowRedirects(false);
+        } catch (final SSLException e) {
+            basicInfo = ErrorCode.BROKEN_CERTS;
         } catch (final IOException e) {
             basicInfo = ErrorCode.CANT_VERIFY;
             return;
         }
         try {
             responseCode = conn.getResponseCode();
+        } catch (final SSLException e) {
+            basicInfo = ErrorCode.BROKEN_CERTS;
         } catch (final IOException e) {
             basicInfo = ErrorCode.CANT_VERIFY;
         }
@@ -89,6 +93,9 @@ public class SiteReputation {
                 conn.setInstanceFollowRedirects(false);
             } catch (final MalformedURLException e) {
                 basicInfo = ErrorCode.BROKEN_REDIRECT;
+                break;
+            } catch (final SSLException e) {
+                basicInfo = ErrorCode.BROKEN_CERTS;
                 break;
             } catch (final IOException e) {
                 basicInfo = ErrorCode.BROKEN_REDIRECT;
